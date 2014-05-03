@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 
@@ -16,6 +17,9 @@ import com.fasterxml.jackson.core.JsonToken;
 
 import android.app.Fragment;
 import android.content.Context;
+import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -87,8 +91,11 @@ public class Wikis_fragment extends Fragment {
         InputStream is = null;
         try {
             HttpClient httpclient = new DefaultHttpClient();
-            HttpPost httppost = new HttpPost("http://www.wikia.com/wikia.php?controller=WikisApi&method=getList&hub=Gaming&lang=en");
-            HttpResponse response = httpclient.execute(httppost);
+//            HttpPost httppost = new HttpPost("http://www.wikia.com/wikia.php?controller=WikisApi&method=getList&hub=Gaming&lang=en");
+            HttpGet httpget = new HttpGet("http://www.wikia.com/wikia.php?controller=WikisApi&method=getList&hub=Gaming&lang=en");
+            
+//            HttpResponse response = httpclient.execute(httppost);
+            HttpResponse response = httpclient.execute(httpget);
             HttpEntity entity = response.getEntity();
             is = entity.getContent();
         } catch (Exception e) {
@@ -96,7 +103,7 @@ public class Wikis_fragment extends Fragment {
         	
 //        	TODO It is for DEBUG 
 //        	load JSON from assets
-			return getItemsfromAssets();
+//			return getItemsfromAssets();
         }
         return getParsedData(is);
     }
@@ -190,20 +197,29 @@ public class Wikis_fragment extends Fragment {
 		@Override
 		public View getView(int position, View convertView, ViewGroup parent) {
 			LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-			View rowView = inflater.inflate(R.layout.lv_layout, parent, false);
-			TextView tv_title = (TextView) rowView.findViewById(R.id.tv_wiki_title);
-			TextView tv_wiki_url = (TextView) rowView.findViewById(R.id.tv_wiki_url);
-			ImageView iv_wiki_thumbnail = (ImageView) rowView.findViewById(R.id.iv_wiki_thumbnail);
-			
+//			View rowView = inflater.inflate(R.layout.lv_layout, parent, false);
+//			parent.addView(child, params)
 			Wikis_item item = items.get(position);
-			
-			tv_title.setText(item.getTitle());
-			tv_wiki_url.setText(item.getWikis_url());
-			iv_wiki_thumbnail.setBackgroundResource(R.drawable.ic_launcher);
+			View rowView = new RecordItemView(context, item);
+//			TextView tv_title = (TextView) rowView.findViewById(R.id.tv_wiki_title);
+//			TextView tv_wiki_url = (TextView) rowView.findViewById(R.id.tv_wiki_url);
+//			ImageView iv_wiki_thumbnail = (ImageView) rowView.findViewById(R.id.iv_wiki_thumbnail);
+//			
+//			Wikis_item item = items.get(position);
+//			
+//			tv_title.setText(item.getTitle());
+//			tv_wiki_url.setText(item.getWikis_url());
+//			ImageLoader imageLoader = new ImageLoader();
+//			imageLoader.
+//			Drawable d = ;
+//			iv_wiki_thumbnail.setBackgroundDrawable(d );
+//			iv_wiki_thumbnail.setBackgroundResource(R.drawable.ic_launcher);
 			
 			return rowView;
 		}
 	} 
     
+
+	
 	
 }

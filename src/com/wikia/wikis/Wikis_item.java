@@ -2,6 +2,10 @@ package com.wikia.wikis;
 
 import java.io.IOException;
 
+import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.os.AsyncTask;
+
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
@@ -75,6 +79,7 @@ public class Wikis_item {
 			this.wiki_url_thumbnail_image = url_thumbnail_image;
 		}
 		
+
 //		public void parse(JsonParser parser) throws JsonParseException,	IOException {
 //			JsonToken token = parser.nextToken();
 //			if (token == JsonToken.START_OBJECT) {
