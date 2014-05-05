@@ -48,6 +48,7 @@ public class Wikis_fragment extends Fragment {
 	private View progressBarLinearLayout;
 	private View listViewLinearLayout;
 	private ListView listView;
+	private AdapterImageLoader imageLoader;
 	
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -92,7 +93,7 @@ public class Wikis_fragment extends Fragment {
 		protected void onPostExecute(ItemsArrayAdapter adapter) {
 			progressBarLinearLayout.setVisibility(View.GONE);
 			listViewLinearLayout.setVisibility(View.VISIBLE);
-
+			imageLoader = new AdapterImageLoader(listView);
 	        listView.setAdapter(adapter);
 		}
 		
@@ -219,15 +220,18 @@ public class Wikis_fragment extends Fragment {
 			tv_title.setText(item.getTitle());
 			tv_wiki_url.setText(item.getWikis_url());
 
-	        if (iv_wiki_thumbnail != null) {
-	            new ImageDownloaderTask(iv_wiki_thumbnail).execute(item);
-	        }
+//	        if (iv_wiki_thumbnail != null) {
+//	            new ImageDownloaderTask(iv_wiki_thumbnail).execute(item);
+//	        }
 	        
-//			ImageLoader imageLoader = new ImageLoader();
-//			imageLoader.
-//			Drawable d = ;
-//			iv_wiki_thumbnail.setBackgroundDrawable(d );
-//			iv_wiki_thumbnail.setBackgroundResource(R.drawable.ic_launcher);
+	        if (iv_wiki_thumbnail != null) {
+		        iv_wiki_thumbnail.setImageBitmap(null);
+		        try {
+		        	imageLoader.addImage(item.getId(), iv_wiki_thumbnail);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+	        }	        
 			
 			return rowView;
 		}
