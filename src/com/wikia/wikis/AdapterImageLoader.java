@@ -2,6 +2,7 @@ package com.wikia.wikis;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -200,27 +201,85 @@ public class AdapterImageLoader {
 		LoadEntry currentEntry = workQueue.takeFirst();
 		for (final LoadPair pair : currentEntry.list) {
 			final URL newurl = pair.url;
-			if (pair.callback != null) {
-				final URLConnection connection = newurl
-						.openConnection();
-				// If you have a cache implementation, use it.
-				connection.setUseCaches(true);
-
-				final Bitmap out = BitmapFactory
-						.decodeStream(connection
-								.getInputStream());
-				final ImageView oldcb = pair.callback;
-				if (oldcb != null) {
-					// Post to callback in the UI thread.
-					handler.post(new Runnable() {
-						@Override
-						public void run() {
-							final ImageView oldcb = pair.callback;
-							if (oldcb != null)
-								oldcb.setImageBitmap(out);
-						}
-					});
+			if (pair.callback != null && newurl != null) {
+				boolean success = true;
+				HttpClient client = new DefaultHttpClient();
+				HttpGet getRequest = null;
+				try {
+					getRequest = new HttpGet(newurl.toURI());
+				} catch (URISyntaxException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
 				}
+				try {
+				    HttpResponse response = client.execute(getRequest);
+				    final int statusCode = response.getStatusLine().getStatusCode();
+				    if (statusCode != HttpStatus.SC_OK) {
+				    	success = false;
+				    }
+				    URL url = null;
+				    final HttpEntity entity = response.getEntity();
+				    if (entity != null) {
+				        InputStream inputStream = null;
+				        try {
+				            inputStream = entity.getContent();
+				            url = new URL(getParsedDataWikisDetails(inputStream));
+//							final URLConnection connection = newurl.openConnection();
+							final URLConnection connection = url.openConnection();
+							// If you have a cache implementation, use it.
+							connection.setUseCaches(true);
+
+							final Bitmap out = BitmapFactory
+									.decodeStream(connection
+											.getInputStream());
+							final ImageView oldcb = pair.callback;
+							if (oldcb != null) {
+								// Post to callback in the UI thread.
+								handler.post(new Runnable() {
+									@Override
+									public void run() {
+										final ImageView oldcb = pair.callback;
+										if (oldcb != null)
+											oldcb.setImageBitmap(out);
+									}
+								});
+							}				            
+				            
+				            
+				        } finally {
+				            if (inputStream != null) {
+				                inputStream.close();
+				            }
+				            entity.consumeContent();
+				        }
+				    }
+				} catch (Exception e) {
+				    // Could provide a more explicit error message for IOException or
+				    // IllegalStateException
+				    getRequest.abort();
+				    Log.w("ImageDownloader", "Error while retrieving bitmap from " 
+				    		+ "http://www.wikia.com/wikia.php?controller=WikisApi&method=getDetails&ids=" );
+				} 
+				
+//				final URLConnection connection = newurl.openConnection();
+//				// If you have a cache implementation, use it.
+//				connection.setUseCaches(true);
+//
+//				final Bitmap out = BitmapFactory
+//						.decodeStream(connection
+//								.getInputStream());
+//				final ImageView oldcb = pair.callback;
+//				if (oldcb != null) {
+//					// Post to callback in the UI thread.
+//					handler.post(new Runnable() {
+//						@Override
+//						public void run() {
+//							final ImageView oldcb = pair.callback;
+//							if (oldcb != null)
+//								oldcb.setImageBitmap(out);
+//						}
+//					});
+//				}
 			}
 		}
 	}
@@ -249,9 +308,24 @@ public class AdapterImageLoader {
 	public void addImage(String id/*URL url*/, ImageView callback) {
 		LoadEntry le = new LoadEntry();
 		le.list = new ArrayList<LoadPair>();
-		URL url = createUrlFromDetail(id);
-		Connection c = new Connection();
-		c.execute("");+
+		URI uri = null;
+		try {
+			uri = new URI("http://www.wikia.com/wikia.php?controller=WikisApi&method=getDetails&ids=" + id);
+		} catch (URISyntaxException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		URL url = null;
+		try {
+			url = uri.toURL();
+		} catch (MalformedURLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+//		URL url = createUrlFromDetail(id);
+		Connection c = new Connection(callback);
+		c.execute(id);
+		
 		le.list.add(new LoadPair(url, callback));
 		addToWorkQueue(le);
 	}
@@ -387,20 +461,64 @@ public class AdapterImageLoader {
 		addToWorkQueue(le);
 	}
 	
-	private class Connection extends AsyncTask {
-	    @Override
+	private class Connection extends AsyncTask<String, Void, URL > {
+	    private ImageView callback;
 
-	    protected Object doInBackground(Object... arg0) {
+		public Connection(ImageView imView) {
+			this.callback = imView;
+		}
 
-	        
+		@Override
 
-	        return null;
+	    protected URL doInBackground(String... id) {
+			URI uri = null;
+			try {
+				uri = new URI("http://www.wikia.com/wikia.php?controller=WikisApi&method=getDetails&ids=" + id);
+			} catch (URISyntaxException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			
+//			final AndroidHttpClient client = AndroidHttpClient.newInstance("Android");
+			HttpClient client = new DefaultHttpClient();
+			final HttpGet getRequest = new HttpGet(uri);
+			try {
+			    HttpResponse response = client.execute(getRequest);
+			    final int statusCode = response.getStatusLine().getStatusCode();
+			    if (statusCode != HttpStatus.SC_OK) {
+			        return null;
+			    }
+
+			    final HttpEntity entity = response.getEntity();
+			    if (entity != null) {
+			        InputStream inputStream = null;
+			        try {
+			            inputStream = entity.getContent();
+			            final URL url = new URL(getParsedDataWikisDetails(inputStream));
+			            return url;
+			        } finally {
+			            if (inputStream != null) {
+			                inputStream.close();
+			            }
+			            entity.consumeContent();
+			        }
+			    }
+			} catch (Exception e) {
+			    // Could provide a more explicit error message for IOException or
+			    // IllegalStateException
+			    getRequest.abort();
+			    Log.w("ImageDownloader", "Error while retrieving bitmap from " 
+			    		+ "http://www.wikia.com/wikia.php?controller=WikisApi&method=getDetails&ids=" );
+			} 
+			return null;
 
 	    }
 	    
-	    protected void onPostExecute(Void param) {
-
-	        // TODO: do something with the feed
+	    protected void onPostExecute(URL url) {
+			LoadEntry le = new LoadEntry();
+			le.list = new ArrayList<LoadPair>();
+			le.list.add(new LoadPair(url, callback));
+			addToWorkQueue(le);
 	    }
 	    
 	}
