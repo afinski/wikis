@@ -223,9 +223,9 @@ public class AdapterImageLoader {
 				        InputStream inputStream = null;
 				        try {
 				            inputStream = entity.getContent();
-				            url = new URL(getParsedDataWikisDetails(inputStream));
-//							final URLConnection connection = newurl.openConnection();
-							final URLConnection connection = url.openConnection();
+//				            url = new URL(getParsedDataWikisDetails(inputStream));
+							final URLConnection connection = newurl.openConnection();
+//							final URLConnection connection = url.openConnection();
 							// If you have a cache implementation, use it.
 							connection.setUseCaches(true);
 
@@ -305,124 +305,129 @@ public class AdapterImageLoader {
 	 * @param url
 	 * @param callback
 	 */
-	public void addImage(String id/*URL url*/, ImageView callback) {
+	public void addImage(String url, ImageView callback) {
 		LoadEntry le = new LoadEntry();
 		le.list = new ArrayList<LoadPair>();
-		URI uri = null;
+//		URI uri = null;
+//		try {
+//			uri = new URI("http://www.wikia.com/wikia.php?controller=WikisApi&method=getDetails&ids=" + id);
+//		} catch (URISyntaxException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//		URL url = null;
+//		try {
+//			url = uri.toURL();
+//		} catch (MalformedURLException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+////		URL url = createUrlFromDetail(id);
+//		Connection c = new Connection(callback);
+//		c.execute(id);
+		
 		try {
-			uri = new URI("http://www.wikia.com/wikia.php?controller=WikisApi&method=getDetails&ids=" + id);
-		} catch (URISyntaxException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		URL url = null;
-		try {
-			url = uri.toURL();
+			le.list.add(new LoadPair(new URL(url), callback));
 		} catch (MalformedURLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-//		URL url = createUrlFromDetail(id);
-		Connection c = new Connection(callback);
-		c.execute(id);
-		
-		le.list.add(new LoadPair(url, callback));
 		addToWorkQueue(le);
 	}
 
-	private URL createUrlFromDetail(String id) {
-		URI uri = null;
-		try {
-			uri = new URI("http://www.wikia.com/wikia.php?controller=WikisApi&method=getDetails&ids=" + id);
-		} catch (URISyntaxException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		
-//		final AndroidHttpClient client = AndroidHttpClient.newInstance("Android");
-		HttpClient client = new DefaultHttpClient();
-		final HttpGet getRequest = new HttpGet(uri);
-		try {
-		    HttpResponse response = client.execute(getRequest);
-		    final int statusCode = response.getStatusLine().getStatusCode();
-		    if (statusCode != HttpStatus.SC_OK) {
-		        return null;
-		    }
-
-		    final HttpEntity entity = response.getEntity();
-		    if (entity != null) {
-		        InputStream inputStream = null;
-		        try {
-		            inputStream = entity.getContent();
-		            final URL url = new URL(getParsedDataWikisDetails(inputStream));
-		            return url;
-		        } finally {
-		            if (inputStream != null) {
-		                inputStream.close();
-		            }
-		            entity.consumeContent();
-		        }
-		    }
-		} catch (Exception e) {
-		    // Could provide a more explicit error message for IOException or
-		    // IllegalStateException
-		    getRequest.abort();
-		    Log.w("ImageDownloader", "Error while retrieving bitmap from " 
-		    		+ "http://www.wikia.com/wikia.php?controller=WikisApi&method=getDetails&ids=" );
-		} 
-		return null;
-	}
+//	private URL createUrlFromDetail(String id) {
+//		URI uri = null;
+//		try {
+//			uri = new URI("http://www.wikia.com/wikia.php?controller=WikisApi&method=getDetails&ids=" + id);
+//		} catch (URISyntaxException e1) {
+//			// TODO Auto-generated catch block
+//			e1.printStackTrace();
+//		}
+//		
+////		final AndroidHttpClient client = AndroidHttpClient.newInstance("Android");
+//		HttpClient client = new DefaultHttpClient();
+//		final HttpGet getRequest = new HttpGet(uri);
+//		try {
+//		    HttpResponse response = client.execute(getRequest);
+//		    final int statusCode = response.getStatusLine().getStatusCode();
+//		    if (statusCode != HttpStatus.SC_OK) {
+//		        return null;
+//		    }
+//
+//		    final HttpEntity entity = response.getEntity();
+//		    if (entity != null) {
+//		        InputStream inputStream = null;
+//		        try {
+//		            inputStream = entity.getContent();
+//		            final URL url = new URL(getParsedDataWikisDetails(inputStream));
+//		            return url;
+//		        } finally {
+//		            if (inputStream != null) {
+//		                inputStream.close();
+//		            }
+//		            entity.consumeContent();
+//		        }
+//		    }
+//		} catch (Exception e) {
+//		    // Could provide a more explicit error message for IOException or
+//		    // IllegalStateException
+//		    getRequest.abort();
+//		    Log.w("ImageDownloader", "Error while retrieving bitmap from " 
+//		    		+ "http://www.wikia.com/wikia.php?controller=WikisApi&method=getDetails&ids=" );
+//		} 
+//		return null;
+//	}
 	
-	public String getParsedDataWikisDetails(InputStream is) {
-		if(is == null){
-			return null;
-		}
-		String url = null;
-		ArrayList<Wikis_item> items = new ArrayList<Wikis_item>();
-		try{
-			JsonFactory factory = new JsonFactory();
-			JsonParser jsonParser = factory.createParser(is);
-			JsonToken token = jsonParser.nextToken();
-			if (token == JsonToken.START_OBJECT) {
-				while (token != JsonToken.END_OBJECT) {					
-					token = jsonParser.nextToken();
-					if (token == JsonToken.START_OBJECT) {
-						while (token != JsonToken.END_OBJECT) {
-							token = jsonParser.nextToken();
-							if (token == JsonToken.START_OBJECT) {
-								while (token != JsonToken.END_OBJECT) {
-									token = jsonParser.nextToken();
-									if(token == JsonToken.START_OBJECT){
-										while (token != JsonToken.END_OBJECT) {
-											token = jsonParser.nextToken();
-										}
-										token = jsonParser.nextToken();
-									}
-									if(token == JsonToken.START_ARRAY){
-										while (token != JsonToken.END_ARRAY) {
-											token = jsonParser.nextToken();
-										}
-										token = jsonParser.nextToken();
-									}
-									if (token == JsonToken.FIELD_NAME) {
-										String objectName = jsonParser.getCurrentName();
-										if (0 == objectName.compareToIgnoreCase("image")) {
-											jsonParser.nextToken();
-											url = jsonParser.getValueAsString();
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-		return url;
-	}
+//	public String getParsedDataWikisDetails(InputStream is) {
+//		if(is == null){
+//			return null;
+//		}
+//		String url = null;
+//		ArrayList<Wikis_item> items = new ArrayList<Wikis_item>();
+//		try{
+//			JsonFactory factory = new JsonFactory();
+//			JsonParser jsonParser = factory.createParser(is);
+//			JsonToken token = jsonParser.nextToken();
+//			if (token == JsonToken.START_OBJECT) {
+//				while (token != JsonToken.END_OBJECT) {					
+//					token = jsonParser.nextToken();
+//					if (token == JsonToken.START_OBJECT) {
+//						while (token != JsonToken.END_OBJECT) {
+//							token = jsonParser.nextToken();
+//							if (token == JsonToken.START_OBJECT) {
+//								while (token != JsonToken.END_OBJECT) {
+//									token = jsonParser.nextToken();
+//									if(token == JsonToken.START_OBJECT){
+//										while (token != JsonToken.END_OBJECT) {
+//											token = jsonParser.nextToken();
+//										}
+//										token = jsonParser.nextToken();
+//									}
+//									if(token == JsonToken.START_ARRAY){
+//										while (token != JsonToken.END_ARRAY) {
+//											token = jsonParser.nextToken();
+//										}
+//										token = jsonParser.nextToken();
+//									}
+//									if (token == JsonToken.FIELD_NAME) {
+//										String objectName = jsonParser.getCurrentName();
+//										if (0 == objectName.compareToIgnoreCase("image")) {
+//											jsonParser.nextToken();
+//											url = jsonParser.getValueAsString();
+//										}
+//									}
+//								}
+//							}
+//						}
+//					}
+//				}
+//			}
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+//
+//		return url;
+//	}
 	
 	
 	
@@ -461,66 +466,66 @@ public class AdapterImageLoader {
 		addToWorkQueue(le);
 	}
 	
-	private class Connection extends AsyncTask<String, Void, URL > {
-	    private ImageView callback;
-
-		public Connection(ImageView imView) {
-			this.callback = imView;
-		}
-
-		@Override
-
-	    protected URL doInBackground(String... id) {
-			URI uri = null;
-			try {
-				uri = new URI("http://www.wikia.com/wikia.php?controller=WikisApi&method=getDetails&ids=" + id);
-			} catch (URISyntaxException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-			
-//			final AndroidHttpClient client = AndroidHttpClient.newInstance("Android");
-			HttpClient client = new DefaultHttpClient();
-			final HttpGet getRequest = new HttpGet(uri);
-			try {
-			    HttpResponse response = client.execute(getRequest);
-			    final int statusCode = response.getStatusLine().getStatusCode();
-			    if (statusCode != HttpStatus.SC_OK) {
-			        return null;
-			    }
-
-			    final HttpEntity entity = response.getEntity();
-			    if (entity != null) {
-			        InputStream inputStream = null;
-			        try {
-			            inputStream = entity.getContent();
-			            final URL url = new URL(getParsedDataWikisDetails(inputStream));
-			            return url;
-			        } finally {
-			            if (inputStream != null) {
-			                inputStream.close();
-			            }
-			            entity.consumeContent();
-			        }
-			    }
-			} catch (Exception e) {
-			    // Could provide a more explicit error message for IOException or
-			    // IllegalStateException
-			    getRequest.abort();
-			    Log.w("ImageDownloader", "Error while retrieving bitmap from " 
-			    		+ "http://www.wikia.com/wikia.php?controller=WikisApi&method=getDetails&ids=" );
-			} 
-			return null;
-
-	    }
-	    
-	    protected void onPostExecute(URL url) {
-			LoadEntry le = new LoadEntry();
-			le.list = new ArrayList<LoadPair>();
-			le.list.add(new LoadPair(url, callback));
-			addToWorkQueue(le);
-	    }
-	    
-	}
+//	private class Connection extends AsyncTask<String, Void, URL > {
+//	    private ImageView callback;
+//
+//		public Connection(ImageView imView) {
+//			this.callback = imView;
+//		}
+//
+//		@Override
+//
+//	    protected URL doInBackground(String... id) {
+//			URI uri = null;
+//			try {
+//				uri = new URI("http://www.wikia.com/wikia.php?controller=WikisApi&method=getDetails&ids=" + id);
+//			} catch (URISyntaxException e1) {
+//				// TODO Auto-generated catch block
+//				e1.printStackTrace();
+//			}
+//			
+////			final AndroidHttpClient client = AndroidHttpClient.newInstance("Android");
+//			HttpClient client = new DefaultHttpClient();
+//			final HttpGet getRequest = new HttpGet(uri);
+//			try {
+//			    HttpResponse response = client.execute(getRequest);
+//			    final int statusCode = response.getStatusLine().getStatusCode();
+//			    if (statusCode != HttpStatus.SC_OK) {
+//			        return null;
+//			    }
+//
+//			    final HttpEntity entity = response.getEntity();
+//			    if (entity != null) {
+//			        InputStream inputStream = null;
+//			        try {
+//			            inputStream = entity.getContent();
+//			            final URL url = new URL(getParsedDataWikisDetails(inputStream));
+//			            return url;
+//			        } finally {
+//			            if (inputStream != null) {
+//			                inputStream.close();
+//			            }
+//			            entity.consumeContent();
+//			        }
+//			    }
+//			} catch (Exception e) {
+//			    // Could provide a more explicit error message for IOException or
+//			    // IllegalStateException
+//			    getRequest.abort();
+//			    Log.w("ImageDownloader", "Error while retrieving bitmap from " 
+//			    		+ "http://www.wikia.com/wikia.php?controller=WikisApi&method=getDetails&ids=" );
+//			} 
+//			return null;
+//
+//	    }
+//	    
+//	    protected void onPostExecute(URL url) {
+//			LoadEntry le = new LoadEntry();
+//			le.list = new ArrayList<LoadPair>();
+//			le.list.add(new LoadPair(url, callback));
+//			addToWorkQueue(le);
+//	    }
+//	    
+//	}
 	
 }

@@ -7,6 +7,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.http.HttpEntity;
@@ -21,6 +22,8 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+import com.wikia.wikis.imageutils.ImageLoader;
+//import com.technotalkative.loadwebimage.imageutils.ImageLoader;
 
 import android.app.Fragment;
 import android.content.Context;
@@ -49,6 +52,7 @@ public class Wikis_fragment extends Fragment {
 	private View listViewLinearLayout;
 	private ListView listView;
 	private AdapterImageLoader imageLoader;
+	private ImageLoader imgLoader;
 	
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -66,6 +70,7 @@ public class Wikis_fragment extends Fragment {
 		listViewLinearLayout = rootView.findViewById(R.id.listViewLinearLayout);
 		listViewLinearLayout.setVisibility(View.GONE);
 		
+		imgLoader = new ImageLoader(context);
         ListViewLoaderTask listViewLoaderTask = new ListViewLoaderTask();
         
         listViewLoaderTask.execute();
@@ -73,28 +78,26 @@ public class Wikis_fragment extends Fragment {
 		return rootView;
 	}
 	
-    private class ListViewLoaderTask extends AsyncTask<Void, Void, ItemsArrayAdapter>{
+    private class ListViewLoaderTask extends AsyncTask<Void, Void, ArrayList<Wikis_item>>{
 
     	ArrayList<Wikis_item> itemList;
+    	
 		@Override
-		protected ItemsArrayAdapter doInBackground(Void... params ) {
+		protected ArrayList<Wikis_item> doInBackground(Void... params ) {
 			try {
 				itemList = getItemsfromURL();
 			}catch(Exception e){
 				e.printStackTrace();
 			}
 
-	        ItemsArrayAdapter adapter = new ItemsArrayAdapter(context, itemList);  
+//	        ItemsArrayAdapter adapter = new ItemsArrayAdapter(context, itemList);  
 	        
-			return adapter;
+			return itemList;
 		}
 		
 		@Override
-		protected void onPostExecute(ItemsArrayAdapter adapter) {
-			progressBarLinearLayout.setVisibility(View.GONE);
-			listViewLinearLayout.setVisibility(View.VISIBLE);
-			imageLoader = new AdapterImageLoader(listView);
-	        listView.setAdapter(adapter);
+		protected void onPostExecute(ArrayList<Wikis_item> items) {
+			loadImages(items);
 		}
 		
     }
@@ -120,6 +123,148 @@ public class Wikis_fragment extends Fragment {
         return getParsedDataWikis(is);
     }
     
+    private class ListImagesLoaderTask extends AsyncTask<ArrayList<Wikis_item>, Void, ItemsArrayAdapter>{
+
+    	ArrayList<Wikis_item> itemList;
+		@Override
+		protected ItemsArrayAdapter doInBackground(ArrayList<Wikis_item>... params ) {
+			try {
+				itemList = params[0];
+				fillImageUrlForItems(itemList);
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+
+	        ItemsArrayAdapter adapter = new ItemsArrayAdapter(context, itemList);  
+	        
+			return adapter;
+		}
+		
+		@Override
+		protected void onPostExecute(ItemsArrayAdapter adapter) {
+			progressBarLinearLayout.setVisibility(View.GONE);
+			listViewLinearLayout.setVisibility(View.VISIBLE);
+//			imageLoader = new AdapterImageLoader(listView);
+	        listView.setAdapter(adapter);
+		}
+		
+    }
+    
+	public void loadImages(ArrayList<Wikis_item> items) {
+		ListImagesLoaderTask listViewLoaderTask = new ListImagesLoaderTask();
+        listViewLoaderTask.execute(items);
+	}
+	
+	
+
+	public void fillImageUrlForItems(ArrayList<Wikis_item> itemList) {
+	        InputStream is = null;
+	        try {
+	        	String ids = "";
+	        	for (Wikis_item wikis_item : itemList) {
+					if(!ids.isEmpty()){
+						ids = ids + ",";
+					}
+	        		ids = ids + wikis_item.getId();
+				}
+	            HttpClient httpclient = new DefaultHttpClient();
+//	            HttpPost httppost = 
+//	            new HttpPost("http://www.wikia.com/wikia.php?controller=WikisApi&method=getDetails&ids=159,831,3125&height=100&width=100&snippet=25");
+	            HttpGet httpget = new HttpGet("http://www.wikia.com/wikia.php?controller=WikisApi&method=getDetails&ids="
+	            		+ ids
+	            		+ "&height=100&width=100&snippet=25");
+	            
+//	            HttpResponse response = httpclient.execute(httppost);
+	            HttpResponse response = httpclient.execute(httpget);
+	            HttpEntity entity = response.getEntity();
+	            is = entity.getContent();
+	        } catch (Exception e) {
+	        	e.printStackTrace();
+	        	
+//	        	TODO It is for DEBUG 
+//	        	load JSON from assets
+//				return getItemsfromAssets();
+	        }
+	        setParsedImageUrlForItems(is, itemList);
+		
+	}
+
+
+
+	private void setParsedImageUrlForItems(InputStream is,
+			ArrayList<Wikis_item> itemList) {
+		
+			if(is == null){
+				return;
+			}
+//			ArrayList<Wikis_item> items = new ArrayList<Wikis_item>();
+			try{
+				JsonFactory factory = new JsonFactory();
+				JsonParser jsonParser = factory.createParser(is);
+				JsonToken token = jsonParser.nextToken();
+				// Expected JSON is an array so if current token is "[" then while
+				// we don't get
+				// "]" we will keep parsing
+//				if (token == JsonToken.START_ARRAY) {
+//					while (token != JsonToken.END_ARRAY) {
+				if (token == JsonToken.START_OBJECT) {
+					while (token != JsonToken.END_OBJECT) {					
+						token = jsonParser.nextToken();
+						if (token == JsonToken.START_OBJECT) {
+							while (token != JsonToken.END_OBJECT) {
+								token = jsonParser.nextToken();
+								Wikis_item item = null;
+								if (token == JsonToken.START_OBJECT) {
+									while (token != JsonToken.END_OBJECT) {
+//										Wikis_item item = null;
+										token = jsonParser.nextToken();
+										if(token == JsonToken.START_OBJECT){
+											while (token != JsonToken.END_OBJECT) {
+												token = jsonParser.nextToken();
+											}
+											token = jsonParser.nextToken();
+										}										
+										if(token == JsonToken.START_ARRAY){
+											while (token != JsonToken.END_ARRAY) {
+												token = jsonParser.nextToken();
+											}
+											token = jsonParser.nextToken();
+										}										
+										if (token == JsonToken.FIELD_NAME) {
+											String objectName = jsonParser.getCurrentName();
+											if (0 == objectName.compareToIgnoreCase("id")) {
+												jsonParser.nextToken();
+//												item.setId(jsonParser.getValueAsString());
+												for (Wikis_item wikis_item : itemList) {
+													if(wikis_item.getId().equals(jsonParser.getValueAsString())){
+														item = wikis_item;
+														break;
+													}
+												};
+											}else if (0 == objectName.compareToIgnoreCase("image")) {
+												jsonParser.nextToken();
+												item.setImage_url(jsonParser.getValueAsString());
+											} 
+										}
+									}
+								}
+								
+							}
+						}
+					}
+				}
+				System.out.println(itemList);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+//			return items;
+		
+		
+	}
+
+
+
 	public ArrayList<Wikis_item> getItemsfromAssets() {
         InputStream is = null;
         try {
@@ -223,11 +368,12 @@ public class Wikis_fragment extends Fragment {
 //	        if (iv_wiki_thumbnail != null) {
 //	            new ImageDownloaderTask(iv_wiki_thumbnail).execute(item);
 //	        }
-	        
+//			ImageLoader imgLoader = new ImageLoader(context);
 	        if (iv_wiki_thumbnail != null) {
 		        iv_wiki_thumbnail.setImageBitmap(null);
 		        try {
-		        	imageLoader.addImage(item.getId(), iv_wiki_thumbnail);
+		        	imgLoader.DisplayImage(item.getImage_url(), iv_wiki_thumbnail);
+//		        	imageLoader.addImage(item.getImage_url(), iv_wiki_thumbnail);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}

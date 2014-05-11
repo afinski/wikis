@@ -78,26 +78,6 @@ public class Wikis_item {
 		public void setImage_url(String url_thumbnail_image) {
 			this.wiki_url_thumbnail_image = url_thumbnail_image;
 		}
-		
-
-//		public void parse(JsonParser parser) throws JsonParseException,	IOException {
-//			JsonToken token = parser.nextToken();
-//			if (token == JsonToken.START_OBJECT) {
-//				while (token != JsonToken.END_OBJECT) {
-//					token = parser.nextToken();
-//					if (token == JsonToken.FIELD_NAME) {
-//						String fieldName = parser.getCurrentName();
-//						parser.nextToken();
-//						System.out.println(fieldName);
-//						if (0 == fieldName.compareToIgnoreCase("login")) {
-//							login_of_the_owner = parser.getValueAsString();
-//						}else if (0 == fieldName.compareToIgnoreCase("html_url")) {
-//							owner_url = parser.getValueAsString();
-//						} 
-//					}
-//				}
-//			}
-//		}
 
 	}
 
